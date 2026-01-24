@@ -6,11 +6,9 @@ workflows:
     scripts:
       - name: Get Flutter packages
         script: | 
-          cd flutter_app
           flutter packages pub get
       - name: Build Flutter APK
         script: | 
-          cd flutter_app
           flutter build apk --debug
     artifacts:
-      - flutter_app/build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/flutter-apk/*.apk
