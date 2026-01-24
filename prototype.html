@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONE MORE MOVE - Prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        #gameTitle {
+            position: absolute;
+            top: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(108, 92, 231, 0.5);
+        }
+
+        #hud {
+            position: absolute;
+            top: 70px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            font-size: 16px;
+        }
+
+        .hudItem {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #lives {
+            display: flex;
+            gap: 8px;
+            font-size: 24px;
+        }
+
+        .heart {
+            animation: heartBeat 1.5s infinite;
+        }
+
+        @keyframes heartBeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            10% {
+                transform: scale(1.1);
+            }
+
+            20% {
+                transform: scale(1);
+            }
+        }
+
+        #levelDisplay {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00E676;
+        }
+
+        #gameCanvas {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+            cursor: grab;
+        }
+
+        #gameCanvas.dragging {
+            cursor: grabbing;
+        }
+
+        #gameOverPanel {
+            position: absolute;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            min-width: 350px;
+        }
+
+        #gameOverPanel.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .gameOverTitle {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FF6B6B;
+        }
+
+        .scoreDisplay {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00B8D4 0%, #6C5CE7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            text-align: left;
+            margin: 10px 0;
+        }
+
+        .stats div {
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .button {
+            padding: 18px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        .restartButton {
+            background: linear-gradient(135deg, #6C5CE7 0%, #A855F7 100%);
+            color: white;
+            box-shadow: 0 8px 24px rgba(108, 92, 231, 0.4);
+        }
+
+        .restartButton:hover {
+            box-shadow: 0 10px 35px rgba(108, 92, 231, 0.6);
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .scorePopup {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: scoreFloat 1s ease-out forwards;
+        }
+
+        @keyframes scoreFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        .notification {
+            position: absolute;
+            top: 120px;
+            background: rgba(0, 230, 118, 0.9);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            animation: notificationSlide 2s ease-out forwards;
+            box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
+        }
+
+        @keyframes notificationSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            10%,
+            90% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gameTitle">🎯 ONE MORE MOVE</div>
+
+    <div id="hud">
+        <div class="hudItem">
+            <div>Lives</div>
+            <div id="lives"></div>
+        </div>
+        <div class="hudItem">
+            <div>Level</div>
+            <div id="levelDisplay">1</div>
+        </div>
+        <div class="hudItem">
+            <div>Score</div>
+            <div id="currentScore">0</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="600" height="800"></canvas>
+
+    <div id="gameOverPanel">
+        <div class="gameOverTitle">GAME OVER</div>
+        <div class="scoreDisplay" id="finalScore">0</div>
+
+        <div class="stats">
+            <div><span>Total Score:</span><span id="statScore">0</span></div>
+            <div><span>Level Reached:</span><span id="statLevel">1</span></div>
+            <div><span>Zones Scored:</span><span id="statZones">0</span></div>
+            <div><span>Best Score:</span><span id="statBest">0</span></div>
+        </div>
+
+        <button class="button restartButton" onclick="restartGame()">
+            🔄 PLAY AGAIN
+        </button>
+    </div>
+
+    <div id="instructions">
+        🖱️ Drag to aim and release to launch<br>
+        ❤️ 5 lives • 🎯 Hit zones for points • ⚠️ Don't hit the ground!
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let gameState = 'READY'; // READY, AIMING, FLYING
+        let player = {
+            x: 300,
+            y: 550,
+            vx: 0,
+            vy: 0,
+            radius: 20,
+            startX: 300,
+            startY: 550
+        };
+
+        let dragStart = null;
+        let currentDrag = null;
+        let totalScore = 0;
+        let lives = 5;
+        let currentLevel = 1;
+        let zonesScored = 0;
+        let bestScore = localStorage.getItem('bestScore') || 0;
+
+        // Level generation
+        let zones = [];
+        let obstacles = [];
+
+        // Physics
+        const gravity = 0.3;
+        const damping = 0.8;
+        const maxPower = 20;
+
+        // Initialize
+        generateLevel(currentLevel);
+        updateHUD();
+
+        // Canvas events
+        canvas.addEventListener('mousedown', onDragStart);
+        canvas.addEventListener('mousemove', onDragMove);
+        canvas.addEventListener('mouseup', onDragEnd);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            onDragStart({ offsetX: x, offsetY: y });
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            onDragMove({ offsetX: x, offsetY: y });
+        });
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            onDragEnd();
+        });
+
+        function generateLevel(level) {
+            zones = [];
+            obstacles = [];
+
+            // Generate 3-6 zones per level
+            const numZones = Math.min(3 + Math.floor(level / 10), 6);
+            const zoneValues = [10, 50, 100, 500, 1000];
+            const zoneColors = ['#888888', '#00B8D4', '#00E676', '#FF9800', '#6C5CE7'];
+
+            for (let i = 0; i < numZones; i++) {
+                const valueIndex = Math.min(Math.floor(level / 20) + Math.floor(Math.random() * 3), 4);
+                zones.push({
+                    x: 100 + Math.random() * 400,
+                    y: 100 + Math.random() * 300,
+                    radius: 40 + Math.random() * 40,
+                    value: zoneValues[valueIndex],
+                    color: zoneColors[valueIndex],
+                    scored: false
+                });
+            }
+
+            // Generate obstacles based on level
+            const numObstacles = Math.min(2 + Math.floor(level / 5), 8);
+
+            for (let i = 0; i < numObstacles; i++) {
+                obstacles.push({
+                    x: 50 + Math.random() * 500,
+                    y: 250 + Math.random() * 250,
+                    width: 60 + Math.random() * 80,
+                    height: 15 + Math.random() * 15
+                });
+            }
+        }
+
+        function updateHUD() {
+            // Lives
+            const livesDiv = document.getElementById('lives');
+            livesDiv.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                if (i < lives) {
+                    livesDiv.innerHTML += '<span class="heart">❤️</span>';
+                } else {
+                    livesDiv.innerHTML += '<span style="opacity: 0.3">💔</span>';
+                }
+            }
+
+            // Level
+            document.getElementById('levelDisplay').textContent = currentLevel;
+
+            // Score
+            document.getElementById('currentScore').textContent = totalScore.toLocaleString();
+        }
+
+        function onDragStart(e) {
+            if (gameState !== 'READY') return;
+
+            const dx = e.offsetX - player.x;
+            const dy = e.offsetY - player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < player.radius * 2) {
+                dragStart = { x: e.offsetX, y: e.offsetY };
+                currentDrag = { x: e.offsetX, y: e.offsetY };
+                gameState = 'AIMING';
+                canvas.classList.add('dragging');
+            }
+        }
+
+        function onDragMove(e) {
+            if (gameState === 'AIMING') {
+                currentDrag = { x: e.offsetX, y: e.offsetY };
+            }
+        }
+
+        function onDragEnd() {
+            if (gameState === 'AIMING' && dragStart) {
+                const dx = dragStart.x - currentDrag.x;
+                const dy = dragStart.y - currentDrag.y;
+
+                player.vx = dx / 10;
+                player.vy = dy / 10;
+
+                gameState = 'FLYING';
+                dragStart = null;
+                currentDrag = null;
+                canvas.classList.remove('dragging');
+            }
+        }
+
+        function update() {
+            if (gameState === 'FLYING') {
+                // Apply physics
+                player.vy += gravity;
+                player.x += player.vx;
+                player.y += player.vy;
+
+                // Wall collisions
+                if (player.x - player.radius < 0 || player.x + player.radius > canvas.width) {
+                    player.vx *= -damping;
+                    player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+                }
+
+                // Obstacle collisions
+                obstacles.forEach(obs => {
+                    if (player.x + player.radius > obs.x &&
+                        player.x - player.radius < obs.x + obs.width &&
+                        player.y + player.radius > obs.y &&
+                        player.y - player.radius < obs.y + obs.height) {
+
+                        // Simple bounce
+                        if (Math.abs(player.vy) > Math.abs(player.vx)) {
+                            player.vy *= -damping;
+                            player.y = player.y < obs.y + obs.height / 2 ? obs.y - player.radius : obs.y + obs.height + player.radius;
+                        } else {
+                            player.vx *= -damping;
+                            player.x = player.x < obs.x + obs.width / 2 ? obs.x - player.radius : obs.x + obs.width + player.radius;
+                        }
+                    }
+                });
+
+                // Check zone collision
+                zones.forEach(zone => {
+                    if (zone.scored) return;
+
+                    const dx = player.x - zone.x;
+                    const dy = player.y - zone.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < player.radius + zone.radius) {
+                        scoreZone(zone);
+                    }
+                });
+
+                // Bottom boundary = lose life
+                if (player.y - player.radius > canvas.height) {
+                    loseLife();
+                }
+            }
+        }
+
+        function scoreZone(zone) {
+            zone.scored = true;
+            zonesScored++;
+
+            // Calculate score
+            const baseScore = zone.value;
+            totalScore += baseScore;
+
+            // Show score popup
+            showScorePopup(zone.x, zone.y, '+' + baseScore);
+
+            // Check if all zones scored - level complete!
+            const allScored = zones.every(z => z.scored);
+            if (allScored) {
+                levelComplete();
+            }
+
+            updateHUD();
+        }
+
+        function showScorePopup(x, y, text) {
+            const popup = document.createElement('div');
+            popup.className = 'scorePopup';
+            popup.textContent = text;
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.style.color = '#00E676';
+            document.body.appendChild(popup);
+
+            setTimeout(() => {
+                popup.remove();
+            }, 1000);
+        }
+
+        function showNotification(text) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = text;
+            document.body.appendChild(notif);
+
+            setTimeout(() => {
+                notif.remove();
+            }, 2000);
+        }
+
+        function levelComplete() {
+            currentLevel++;
+
+            if (currentLevel > 100) {
+                // Winner!
+                showNotification('🎉 YOU WIN! ALL 100 LEVELS COMPLETE! 🎉');
+                setTimeout(() => {
+                    endGame();
+                }, 2000);
+                return;
+            }
+
+            showNotification(`🎊 LEVEL ${currentLevel - 1} COMPLETE! 🎊`);
+
+            setTimeout(() => {
+                generateLevel(currentLevel);
+                resetPlayer();
+                gameState = 'READY';
+                updateHUD();
+            }, 1500);
+        }
+
+        function loseLife() {
+            lives--;
+
+            if (lives <= 0) {
+                endGame();
+            } else {
+                showNotification(`💔 Life Lost! ${lives} remaining`);
+                resetPlayer();
+                gameState = 'READY';
+                updateHUD();
+            }
+        }
+
+        function resetPlayer() {
+            player.x = player.startX;
+            player.y = player.startY;
+            player.vx = 0;
+            player.vy = 0;
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+
+            // Update best score
+            if (totalScore > bestScore) {
+                bestScore = totalScore;
+                localStorage.setItem('bestScore', bestScore);
+            }
+
+            // Show game over panel
+            document.getElementById('finalScore').textContent = totalScore.toLocaleString();
+            document.getElementById('statScore').textContent = totalScore.toLocaleString();
+            document.getElementById('statLevel').textContent = currentLevel;
+            document.getElementById('statZones').textContent = zonesScored;
+            document.getElementById('statBest').textContent = bestScore;
+
+            document.getElementById('gameOverPanel').classList.add('show');
+        }
+
+        function restartGame() {
+            gameState = 'READY';
+            lives = 5;
+            totalScore = 0;
+            currentLevel = 1;
+            zonesScored = 0;
+
+            generateLevel(currentLevel);
+            resetPlayer();
+            updateHUD();
+
+            document.getElementById('gameOverPanel').classList.remove('show');
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw zones
+            zones.forEach(zone => {
+                // Skip if already scored
+                if (zone.scored) {
+                    // Draw faded version
+                    ctx.globalAlpha = 0.2;
+                }
+
+                // Outer glow
+                const gradient = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, zone.radius * 1.2);
+                gradient.addColorStop(0, zone.color + '40');
+                gradient.addColorStop(1, zone.color + '00');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(zone.x - zone.radius * 1.2, zone.y - zone.radius * 1.2, zone.radius * 2.4, zone.radius * 2.4);
+
+                // Zone circle
+                ctx.beginPath();
+                ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = zone.color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Center dot
+                ctx.beginPath();
+                ctx.arc(zone.x, zone.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = zone.color;
+                ctx.fill();
+
+                if (!zone.scored) {
+                    // Value text
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(zone.value, zone.x, zone.y + 7);
+                } else {
+                    // Checkmark
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 30px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('✓', zone.x, zone.y + 10);
+                }
+
+                ctx.globalAlpha = 1;
+            });
+
+            // Draw obstacles
+            ctx.fillStyle = '#555';
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                ctx.strokeStyle = '#777';
+                ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            // Draw ground line (danger zone)
+            ctx.strokeStyle = '#FF3D00';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 20);
+            ctx.lineTo(canvas.width, canvas.height - 20);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw trajectory line when aiming
+            if (gameState === 'AIMING' && dragStart && currentDrag) {
+                const dx = dragStart.x - currentDrag.x;
+                const dy = dragStart.y - currentDrag.y;
+                const power = Math.min(Math.sqrt(dx * dx + dy * dy) / 20, maxPower);
+
+                // Draw dotted line
+                ctx.beginPath();
+                ctx.setLineDash([10, 10]);
+
+                // Simulate trajectory
+                let tx = player.x;
+                let ty = player.y;
+                let tvx = dx / 10;
+                let tvy = dy / 10;
+
+                // Color based on power
+                const powerRatio = power / maxPower;
+                const r = Math.round(255 * powerRatio);
+                const g = Math.round(255 * (1 - powerRatio));
+                ctx.strokeStyle = `rgb(${r}, ${g}, 100)`;
+                ctx.lineWidth = 3;
+
+                ctx.moveTo(tx, ty);
+
+                for (let i = 0; i < 50; i++) {
+                    tvy += gravity;
+                    tx += tvx;
+                    ty += tvy;
+
+                    if (i % 3 === 0) {
+                        ctx.lineTo(tx, ty);
+                    }
+
+                    if (ty > canvas.height) break;
+                }
+
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw drag line
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y);
+                ctx.lineTo(currentDrag.x, currentDrag.y);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Draw player
+            const gradient = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2);
+            gradient.addColorStop(0, '#A855F7');
+            gradient.addColorStop(0.5, '#6C5CE7');
+            gradient.addColorStop(1, '#6C5CE7' + '00');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#A855F7';
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+
+</html>

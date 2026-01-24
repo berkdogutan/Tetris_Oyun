@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>One More Move - Ultra Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --accent: #fbbf24;
+            --gold-gradient: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 1s ease;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            padding: 40px 20px;
+            z-index: 100;
+            backdrop-filter: blur(25px);
+            background: rgba(15, 23, 42, 0.85);
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .screen.active {
+            display: flex;
+            animation: screenIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes screenIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* SHAKE EFFECT */
+        .shake {
+            animation: shakeAnim 0.3s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shakeAnim {
+
+            10%,
+            90% {
+                transform: translate3d(-2px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(4px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-6px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(6px, 0, 0);
+            }
+        }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 40px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+
+        .timer-pill {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .timer-warning {
+            color: var(--danger);
+            animation: pulseRed 1s infinite;
+        }
+
+        @keyframes pulseRed {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .home-btn {
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .score-pill {
+            color: var(--accent);
+        }
+
+        .lives-pill {
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .pro-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--gold-gradient);
+            color: #000;
+            font-size: 8px;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-weight: 900;
+        }
+
+        /* Profile */
+        .profile-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            transition: 0.3s;
+        }
+
+        .avatar-circle:active {
+            transform: scale(0.9);
+        }
+
+        .username-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: inherit;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            padding: 5px;
+            width: 200px;
+            outline: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 5px;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            opacity: 0.6;
+            margin-bottom: 30px;
+            letter-spacing: 5px;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .btn {
+            background: white;
+            color: var(--bg);
+            border: none;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            width: 100%;
+            max-width: 280px;
+            margin-bottom: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            opacity: 0.9;
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Subs */
+        .subs-grid {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 330px;
+        }
+
+        .sub-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 5px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .sub-box:hover {
+            border-color: white;
+        }
+
+        .sub-box.selected {
+            border-color: var(--accent);
+            background: rgba(251, 191, 36, 0.15);
+        }
+
+        .sub-time {
+            font-size: 10px;
+            font-weight: 900;
+            opacity: 0.6;
+            margin-bottom: 4px;
+        }
+
+        .sub-price {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--accent);
+        }
+
+        /* Effects */
+        .flash-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--danger);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 200;
+            transition: opacity 0.1s;
+        }
+
+        .float-text {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 900;
+            font-size: 32px;
+            animation: float-up 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+            white-space: nowrap;
+            z-index: 150;
+            text-shadow: 0 5px 25px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            width: 100%;
+            left: 0;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(80px) scale(0.4);
+                opacity: 0;
+            }
+
+            30% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100px) scale(0.9);
+                opacity: 0;
+            }
+        }
+
+        .color-dots {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .color-dot.active {
+            border-color: white;
+            transform: scale(1.15);
+            box-shadow: 0 0 10px white;
+        }
+
+        .pref-label {
+            font-size: 10px;
+            font-weight: 900;
+            opacity: 0.4;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .pref-section {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .lb-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 700;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* GOLD MODE */
+        .gold-mode #homeScreen,
+        .gold-mode #completeScreen,
+        .gold-mode #leaderboardScreen {
+            background: var(--gold-gradient);
+            color: #433104;
+        }
+
+        .gold-mode h1,
+        .gold-mode .subtitle,
+        .gold-mode .username-input,
+        .gold-mode #lvlNum,
+        .gold-mode .lb-item {
+            color: #433104;
+        }
+
+        .gold-mode .username-input,
+        .gold-mode .lb-item {
+            border-color: rgba(67, 49, 4, 0.3);
+        }
+
+        .gold-mode .avatar-circle {
+            background: #433104;
+            box-shadow: 0 0 20px rgba(67, 49, 4, 0.5);
+        }
+
+        .gold-mode .btn {
+            background: #433104;
+            color: white;
+        }
+
+        .gold-mode .btn-outline {
+            background: rgba(67, 49, 4, 0.1);
+            border-color: #433104;
+            color: #433104;
+        }
+
+        .gold-mode .pill {
+            background: rgba(67, 49, 4, 0.1);
+            border-color: rgba(67, 49, 4, 0.2);
+        }
+    </style>
+</head>
+
+<body id="bodyRoot">
+
+    <div id="gameContainer">
+        <div id="flash" class="flash-overlay"></div>
+
+        <!-- HUD -->
+        <div class="hud" id="hud" style="display: none;">
+            <div style="display: flex; gap: 10px;">
+                <div class="pill home-btn" onclick="goHome()">🏠</div>
+                <div class="pill">LVL <span id="hudLevel">1</span></div>
+            </div>
+            <div class="pill timer-pill" id="timerPill">⏱️ <span id="hudTimer">40s</span></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="pill score-pill">SCORE <span id="hudScore">0</span></div>
+                <div class="pill lives-pill">❤️ <span id="hudLives">5</span></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HOME SCREEN -->
+        <div id="homeScreen" class="screen active">
+            <h1>ONE MORE<br>MOVE</h1>
+            <div class="subtitle">ULTRA EDITION</div>
+
+            <div class="profile-section">
+                <div class="pref-label">1. Choose Avatar</div>
+                <div class="avatar-circle" id="avatarBtn" onclick="cycleAvatar()">👾</div>
+                <input type="text" class="username-input" id="usernameInp" value="Player One" maxlength="12">
+            </div>
+
+            <div class="pref-section">
+                <div class="pref-label">2. Ball Color</div>
+                <div class="color-dots" id="colorPicker"></div>
+            </div>
+
+
+
+            <div style="font-size: 10px; font-weight: 900; opacity: 0.4; margin-bottom: 8px;">PRO PASS - REMOVE ADS
+            </div>
+            <div class="subs-grid">
+                <div class="sub-box" id="sub-3" onclick="buySub(3, '$4.99')">
+                    <div class="sub-time">3 MO</div>
+                    <div class="sub-price">$4.99</div>
+                </div>
+                <div class="sub-box" id="sub-6" onclick="buySub(6, '$8.99')">
+                    <div class="sub-time">6 MO</div>
+                    <div class="sub-price">$8.99</div>
+                </div>
+                <div class="sub-box" id="sub-12" onclick="buySub(12, '$14.99')">
+                    <div class="sub-time">1 YEAR</div>
+                    <div class="sub-price">$14.99</div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="startGame()">START GAME</button>
+            <button class="btn btn-outline" onclick="showLeaderboard()">LEADERBOARD</button>
+
+            <div id="premiumToggleArea" style="display:none; margin-top:15px;">
+                <label
+                    style="font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="goldToggle" onchange="toggleGold(this.checked)"> 🌟 GOLD THEME ACTIVE
+                </label>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD -->
+        <div id="leaderboardScreen" class="screen">
+            <h1>TOP 10</h1>
+            <div style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 20px;"
+                id="lbList"></div>
+            <button class="btn btn-outline" style="margin-top: 30px;" onclick="goHome()">BACK</button>
+        </div>
+
+        <!-- GAME OVER -->
+        <div id="gameOverScreen" class="screen">
+            <h1 style="color: var(--danger);">GAME OVER</h1>
+            <div style="font-size: 20px; opacity: 0.6; margin: 10px 0 30px;">Final Score: <span id="finalScore">0</span>
+            </div>
+
+            <div id="reviveSection">
+                <button class="btn" style="background: var(--primary); color: white;" onclick="watchAd()">🎬 REVIVE (+1
+                    LIFE)</button>
+                <div style="font-size: 10px; opacity: 0.5; margin-top: 5px;">Revives left: <span
+                        id="reviveCounter">3</span></div>
+            </div>
+
+            <button class="btn btn-outline" onclick="goHome()">MAIN MENU</button>
+        </div>
+
+        <!-- COMPLETE -->
+        <div id="completeScreen" class="screen">
+            <div style="font-size: 20px; opacity: 0.6;">LEVEL</div>
+            <h1 id="lvlNum">1</h1>
+            <div style="font-size: 24px; color: var(--secondary); font-weight: 700; margin-bottom: 30px;">COMPLETED!
+            </div>
+            <div id="stars" style="font-size: 45px; margin-bottom: 40px; display: flex; gap: 8px;"></div>
+            <button class="btn" style="background: var(--secondary); color: white;"
+                onclick="nextLevel()">CONTINUE</button>
+            <button class="btn btn-outline" onclick="goHome()">HOME</button>
+        </div>
+    </div>
+
+    <script>
+        // AUDIO SYSTEM
+        const AudioSys = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            play(type) {
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                if (type === 'launch') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, t);
+                    osc.frequency.exponentialRampToValueAtTime(600, t + 0.1);
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                    osc.start(t); osc.stop(t + 0.2);
+                } else if (type === 'hit') {
+                    osc.type = 'triangle';
+                    osc.frequency.setTargetAtTime(800, t, 0.1);
+                    gain.gain.setValueAtTime(0.15, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    osc.start(t); osc.stop(t + 0.3);
+                } else if (type === 'miss') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, t);
+                    osc.frequency.linearRampToValueAtTime(50, t + 0.3);
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.linearRampToValueAtTime(0.01, t + 0.3);
+                    osc.start(t); osc.stop(t + 0.3);
+                } else if (type === 'tension') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(150, t);
+                    osc.frequency.linearRampToValueAtTime(100, t + 0.1);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.1);
+                    osc.start(t); osc.stop(t + 0.1);
+                } else if (type === 'success') {
+                    [1000, 1200, 1500].forEach((freq, i) => {
+                        const o = this.ctx.createOscillator();
+                        const g = this.ctx.createGain();
+                        o.connect(g); g.connect(this.ctx.destination);
+                        o.frequency.setValueAtTime(freq, t + i * 0.1);
+                        g.gain.setValueAtTime(0.1, t + i * 0.1);
+                        g.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.2);
+                        o.start(t + i * 0.1); o.stop(t + i * 0.1 + 0.2);
+                    });
+                }
+            }
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('gameContainer');
+        const flash = document.getElementById('flash');
+        const bodyRoot = document.getElementById('bodyRoot');
+
+        // State
+        let state = {
+            level: 1,
+            bestScore: 0,
+            score: 0,
+            lives: 5,
+            maxLives: 5,
+            ballColor: '#6366f1',
+            avatar: '👾',
+            username: 'Player One',
+            isPremium: false,
+            isGoldActive: false,
+            revives: 0
+        };
+
+        const AVATARS = ['👾', '🤖', '🛸', '👻', '🦄', '🦁', '🎱', '😎', '👑'];
+        const COLORS = ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#a855f7'];
+        const PREMIUM_COLORS = ['#ff0055', '#00ffcc', '#ee00ff', '#ffea00', '#00ff44', '#ffffff'];
+
+        // NEON POINT-BASED COLLECTIONS
+        const POINT_TIERS = [
+            { val: 50, radius: 38, color: '#00ff66', strings: ["Fena Değil!", "Güzel!", "Hadi!"] },
+            { val: 100, radius: 32, color: '#00ccff', strings: ["Harika!", "Süper!", "Müthiş!"] },
+            { val: 150, radius: 26, color: '#ff00ff', strings: ["İnanılmaz!", "Efsane!", "Vay Be!"] },
+            { val: 200, radius: 18, color: '#ffff00', strings: ["MÜKEMMEL!", "HİÇ KAÇMAZ!", "ÜSTAD!"] }
+        ];
+
+        const BG_COLORS = [
+            '#00d2ff', // Electric Sky
+            '#92fe9d', // Acid Green
+            '#ff512f', // Flame Orange
+            '#f09819', // Amber Glow
+            '#ff0099', // Hyper Pink
+            '#00ff87'  // Spring Neon
+        ];
+        const PREMIUM_BG_THEMES = [
+            'linear-gradient(45deg, #00B4DB, #0083B0)',
+            'linear-gradient(45deg, #7028e4, #e5b2ca)',
+            'linear-gradient(45deg, #F09819, #EDDE5D)',
+            'linear-gradient(45deg, #FF512F, #DD2476)',
+            'linear-gradient(45deg, #8E2DE2, #4A00E0)',
+            'linear-gradient(45deg, #BFF098, #6BAED6)'
+        ];
+        // Game
+        let ball = { x: 0, y: 0, vx: 0, vy: 0, r: 15, active: false, trail: [] };
+        let targets = [];
+        let obstacles = [];
+        let particles = [];
+        let drag = { start: null, current: null };
+        let gameMode = 'HOME';
+        let timeScale = 1.0;
+        let shotsThisLevel = 0;
+        let hitsInCurrentShot = 0;
+        let timeLeft = 0;
+        let timerLastTick = 0;
+
+        function loadState() {
+            const saved = localStorage.getItem('onemoremove_ultra_vFinal_v3');
+            if (saved) state = { ...state, ...JSON.parse(saved) };
+            updateHomeUI();
+        }
+        function saveState() {
+            localStorage.setItem('onemoremove_ultra_vFinal_v3', JSON.stringify(state));
+        }
+
+        function resize() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            if (!ball.active) resetBall();
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height * 0.8;
+            ball.vx = 0; ball.vy = 0;
+            ball.active = false;
+            ball.trail = [];
+            hitsInCurrentShot = 0;
+        }
+
+        function initLevel() {
+            targets = [];
+            obstacles = [];
+            shotsThisLevel = 0;
+
+            // SET BRIGHT DYNAMIC BACKGROUND
+            if (state.isPremium) {
+                // Premium Dynamic Gradients
+                document.body.style.background = PREMIUM_BG_THEMES[(state.level - 1) % PREMIUM_BG_THEMES.length];
+            } else {
+                // Standard Vivid Colors
+                document.body.style.background = BG_COLORS[(state.level - 1) % BG_COLORS.length];
+            }
+
+            // TIMER SETUP (Shorter as requested: 25s base + level scaling)
+            timeLeft = 20 + (state.level * 2);
+            timerLastTick = Date.now();
+
+            // 1. GENERATE OBSTACLES FIRST (Difficulty scales but stays playable)
+            const obsCount = Math.min(5, Math.floor(state.level / 4) + 1);
+            const neonEngels = ['#00ffcc', '#ff00ff', '#00ffff', '#ffff00', '#ffea00', '#00ff44'];
+            const levelObstacleColor = neonEngels[Math.floor(Math.random() * neonEngels.length)];
+            for (let i = 0; i < obsCount; i++) {
+                obstacles.push({
+                    x: 40 + Math.random() * (canvas.width - 140),
+                    y: 200 + Math.random() * (canvas.height * 0.25), // Centered y range
+                    w: 60 + Math.random() * 70,
+                    h: 15,
+                    color: levelObstacleColor
+                });
+            }
+
+            // 2. GENERATE TARGETS (Check for overlap with obstacles)
+            const targetCount = 1 + Math.min(3, Math.floor(state.level / 6));
+            for (let i = 0; i < targetCount; i++) {
+                let validPos = false;
+                let tx, ty, tr, tier;
+                let attempts = 0;
+
+                while (!validPos && attempts < 50) {
+                    tier = POINT_TIERS[Math.floor(Math.random() * POINT_TIERS.length)];
+                    tr = tier.radius;
+                    tx = 50 + Math.random() * (canvas.width - 100);
+                    ty = 80 + Math.random() * (canvas.height * 0.4);
+
+                    // Simple overlap check with obstacles
+                    validPos = !obstacles.some(o => (
+                        tx + tr > o.x - 10 && tx - tr < o.x + o.w + 10 &&
+                        ty + tr > o.y - 10 && ty - tr < o.y + o.h + 10
+                    ));
+                    attempts++;
+                }
+
+                targets.push({
+                    x: tx, y: ty, r: tr, val: tier.val, hit: false,
+                    scale: 0, color: tier.color, tier: tier
+                });
+            }
+
+            resetBall();
+            updateHUD();
+        }
+
+        function update() {
+            if (gameMode !== 'PLAYING') return;
+
+            targets.forEach(t => { if (!t.hit && t.scale < 1) t.scale += 0.05; });
+
+            if (ball.active) {
+                ball.vy += 0.25 * timeScale;
+                ball.x += ball.vx * timeScale;
+                ball.y += ball.vy * timeScale;
+
+                // Walls
+                if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
+                    ball.vx *= -0.7;
+                    ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+                }
+                if (ball.y < ball.r) {
+                    ball.vy *= -0.7;
+                    ball.y = ball.r;
+                }
+
+                // Obstacles
+                obstacles.forEach(o => {
+                    if (ball.x + ball.r > o.x && ball.x - ball.r < o.x + o.w &&
+                        ball.y + ball.r > o.y && ball.y - ball.r < o.y + o.h) {
+                        const dL = (ball.x + ball.r) - o.x;
+                        const dR = (o.x + o.w) - (ball.x - ball.r);
+                        const dT = (ball.y + ball.r) - o.y;
+                        const dB = (o.y + o.h) - (ball.y - ball.r);
+                        const min = Math.min(dL, dR, dT, dB);
+                        if (min === dT || min === dB) {
+                            ball.vy *= -0.8;
+                            ball.y += (min === dT) ? -min : min;
+                        } else {
+                            ball.vx *= -0.8;
+                            ball.x += (min === dL) ? -min : min;
+                        }
+                    }
+                });
+
+                // Collision
+                let nearAny = false;
+                let last = false;
+
+                targets.forEach(t => {
+                    if (t.hit) return;
+                    const d = Math.hypot(ball.x - t.x, ball.y - t.y);
+
+                    // Near miss logic
+                    if (d < t.r + 50 && d > ball.r + t.r) {
+                        nearAny = true;
+                    }
+
+                    if (d < (ball.r + t.r) * t.scale) {
+                        t.hit = true;
+                        hitsInCurrentShot++;
+                        state.score += t.val;
+                        createParticles(t.x, t.y, t.color, true);
+                        AudioSys.play('hit');
+
+                        // Fun strings on hit
+                        const hitStr = t.tier.strings[Math.floor(Math.random() * t.tier.strings.length)];
+                        showFloat(t.x, t.y, hitStr, t.color);
+
+                        const rem = targets.filter(x => !x.hit).length;
+                        if (rem === 0) { last = true; setTimeout(levelComplete, 1200); }
+                        updateHUD();
+                    }
+                });
+
+                if (last) timeScale = 0.15;
+                else if (nearAny) {
+                    timeScale = 0.4;
+                    if (Math.random() < 0.05) showFloat(ball.x, ball.y, "KIL PAYI!", "white");
+                }
+                else timeScale = 1.0;
+
+                if (ball.y > canvas.height + 50) {
+                    ball.active = false;
+                    ball.trail = [];
+                    if (hitsInCurrentShot === 0) {
+                        state.lives--;
+                        triggerFlash();
+                        triggerShake();
+                        AudioSys.play('miss');
+                        showFloat(canvas.width / 2, canvas.height * 0.8, "MISS!", "var(--danger)");
+                        if (state.lives <= 0) gameOver();
+                        else { resetBall(); updateHUD(); }
+                    } else resetBall();
+                }
+
+                // PREMIUM TRAIL LOGIC (Only if Gold Theme Active)
+                if (state.isPremium && state.isGoldActive) {
+                    ball.trail.unshift({ x: ball.x, y: ball.y });
+                    if (ball.trail.length > 20) ball.trail.pop();
+                }
+            }
+
+            // TIMER DECREMENT
+            if (Date.now() - timerLastTick >= 1000) {
+                timeLeft--;
+                timerLastTick = Date.now();
+                updateHUD();
+
+                // Tension sound if under 10s
+                if (timeLeft <= 10 && timeLeft > 0) {
+                    AudioSys.play('tension');
+                }
+
+                if (timeLeft <= 0) {
+                    showFloat(canvas.width / 2, canvas.height / 2, "SÜRE BİTTİ!", "var(--danger)");
+                    gameOver();
+                }
+            }
+
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Targets - NEON RADIANCE
+            targets.forEach(t => {
+                if (t.hit) return;
+                const s = t.scale;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, t.r * s, 0, Math.PI * 2);
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = t.color;
+                ctx.fillStyle = t.color + '44';
+                ctx.fill();
+                ctx.strokeStyle = t.color;
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+
+                ctx.fillStyle = 'white';
+                ctx.font = `900 ${Math.max(12, 16 * s)}px Outfit`;
+                ctx.textAlign = 'center';
+                ctx.shadowBlur = 0;
+                ctx.fillText(t.val, t.x, t.y + 6 * s);
+                ctx.restore();
+            });
+
+            // Obstacles - FILLED NEON
+            obstacles.forEach(o => {
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = o.color;
+                ctx.fillStyle = o.color + '44'; // 44 hex = ~27% opacity for a nice glow fill
+                ctx.fillRect(o.x, o.y, o.w, o.h);
+                ctx.strokeStyle = o.color;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(o.x, o.y, o.w, o.h);
+                ctx.restore();
+            });
+
+            if (drag.start && drag.current) {
+                const dx = (drag.start.x - drag.current.x) * 0.11;
+                const dy = (drag.start.y - drag.current.y) * 0.11;
+                let px = ball.x, py = ball.y, pvx = dx, pvy = dy;
+                ctx.beginPath(); ctx.setLineDash([5, 12]); ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.moveTo(px, py);
+                for (let i = 0; i < 25; i++) { pvy += 0.25; px += pvx; py += pvy; ctx.lineTo(px, py); }
+                ctx.stroke(); ctx.setLineDash([]);
+            }
+
+            // PREMIUM TRAIL DRAW (Only if Gold Theme Active)
+            if (state.isPremium && state.isGoldActive && ball.trail.length > 1) {
+                ctx.save();
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = state.ballColor;
+                for (let i = 0; i < ball.trail.length - 1; i++) {
+                    const ratio = (ball.trail.length - i) / ball.trail.length;
+                    ctx.beginPath();
+                    ctx.strokeStyle = state.ballColor;
+                    ctx.globalAlpha = ratio * 0.4;
+                    ctx.lineWidth = ball.r * 1.5 * ratio;
+                    ctx.moveTo(ball.trail[i].x, ball.trail[i].y);
+                    ctx.lineTo(ball.trail[i + 1].x, ball.trail[i + 1].y);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // ball
+            ctx.save();
+            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+            ctx.fillStyle = state.ballColor; ctx.shadowBlur = 20; ctx.shadowColor = state.ballColor;
+            ctx.fill(); ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.restore();
+
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function hStart(e) {
+            if (gameMode !== 'PLAYING' || ball.active) return;
+            const r = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+            if (y > canvas.height * 0.5) { drag.start = { x, y }; drag.current = { x, y }; }
+        }
+        function hMove(e) {
+            if (!drag.start) return;
+            const r = canvas.getBoundingClientRect();
+            drag.current = {
+                x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
+                y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top
+            };
+        }
+        function hEnd() {
+            if (!drag.start) return;
+            AudioSys.init();
+            AudioSys.play('launch');
+            ball.vx = (drag.start.x - drag.current.x) * 0.11;
+            ball.vy = (drag.start.y - drag.current.y) * 0.11;
+            ball.active = true; shotsThisLevel++; drag.start = null;
+        }
+
+        canvas.addEventListener('mousedown', hStart);
+        window.addEventListener('mousemove', hMove);
+        window.addEventListener('mouseup', hEnd);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); hStart(e); }, { passive: false });
+        window.addEventListener('touchmove', hMove);
+        window.addEventListener('touchend', hEnd);
+
+        function triggerFlash() { flash.style.opacity = '0.5'; setTimeout(() => flash.style.opacity = '0', 100); }
+        function triggerShake() {
+            container.classList.remove('shake');
+            void container.offsetWidth; // Trigger reflow
+            container.classList.add('shake');
+            setTimeout(() => container.classList.remove('shake'), 400);
+        }
+
+        function showFloat(x, y, t, c) {
+            const d = document.createElement('div'); d.className = 'float-text'; d.textContent = t; d.style.top = Math.min(y, 600) + 'px'; d.style.color = c;
+            container.appendChild(d); setTimeout(() => d.remove(), 1200);
+        }
+        function createParticles(x, y, color, hit = false) {
+            const n = hit ? 25 : 10;
+            for (let i = 0; i < n; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * (hit ? 12 : 6),
+                    vy: (Math.random() - 0.5) * (hit ? 12 : 6),
+                    size: (hit ? 2 : 1) + Math.random() * 3,
+                    life: 1, color
+                });
+            }
+        }
+
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+        function startGame() {
+            gameMode = 'PLAYING';
+            state.username = document.getElementById('usernameInp').value;
+            state.revives = 0;
+            saveState();
+            switchScreen('none');
+            document.getElementById('hud').style.display = 'flex';
+            initLevel();
+        }
+
+        function nextLevel() {
+            state.level++;
+            // LIVES PERSIST: Removed state.lives = state.maxLives
+            saveState();
+            startGame();
+        }
+
+        function levelComplete() {
+            if (gameMode !== 'PLAYING') return;
+            gameMode = 'COMPLETE';
+            AudioSys.play('success');
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('lvlNum').textContent = state.level;
+            let s = (shotsThisLevel <= 2) ? 5 : (shotsThisLevel <= 5 ? 4 : 3);
+            document.getElementById('stars').innerHTML = Array(5).fill(0).map((_, i) =>
+                `<span style="animation: starPop 0.4s ${i * 0.1}s cubic-bezier(0.175,0.885,0.32,1.275) backwards; color: ${i < s ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}">★</span>`
+            ).join('');
+            switchScreen('complete');
+        }
+
+        function gameOver() {
+            gameMode = 'OVER';
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('finalScore').textContent = state.score;
+            const reviveSec = document.getElementById('reviveSection');
+            const revCounter = document.getElementById('reviveCounter');
+            const left = 3 - state.revives;
+            revCounter.textContent = left;
+            if (left <= 0) reviveSec.style.display = 'none';
+            else reviveSec.style.display = 'block';
+
+            let lb = JSON.parse(localStorage.getItem('onemoremove_ultra_lb') || '[]');
+            lb.push({ name: state.username, score: state.score });
+            lb.sort((a, b) => b.score - a.score);
+            localStorage.setItem('onemoremove_ultra_lb', JSON.stringify(lb.slice(0, 10)));
+            state.bestScore = Math.max(state.bestScore, state.score);
+            saveState();
+            switchScreen('gameOver');
+        }
+
+        function watchAd() {
+            if (state.revives < 3) {
+                state.revives++;
+                state.lives = 1;
+                gameMode = 'PLAYING';
+                switchScreen('none');
+                document.getElementById('hud').style.display = 'flex';
+                resetBall();
+                updateHUD();
+                saveState();
+            } else goHome();
+        }
+
+        function showLeaderboard() {
+            const lb = JSON.parse(localStorage.getItem('onemoremove_ultra_lb') || '[]');
+            document.getElementById('lbList').innerHTML = lb.map((item, i) => `
+                <div class="lb-item"><span>#${i + 1} ${item.name}</span><span>${item.score}</span></div>
+            `).join('');
+            switchScreen('leaderboard');
+        }
+
+        function buySub(m, p) {
+            if (confirm(`Buy ${m} Month Pro Pack for ${p}? (Demo)`)) {
+                state.isPremium = true; state.isGoldActive = true;
+                saveState(); updateHomeUI(); alert("Ads Removed & Gold Mode Active!");
+            }
+        }
+
+        function toggleGold(a) {
+            state.isGoldActive = a;
+            updateHomeUI();
+            saveState();
+        }
+
+        function goHome() {
+            gameMode = 'HOME';
+            // ONLY RESET IF LIVES ARE COMPLETELY GONE
+            if (state.lives <= 0) {
+                state.level = 1;
+                state.score = 0;
+                state.lives = state.maxLives;
+            }
+            saveState();
+            switchScreen('home');
+            document.getElementById('hud').style.display = 'none';
+            updateHomeUI();
+        }
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            if (id !== 'none') document.getElementById(id + 'Screen').classList.add('active');
+        }
+
+        function updateHUD() {
+            document.getElementById('hudLevel').textContent = state.level;
+            document.getElementById('hudScore').textContent = state.score;
+            document.getElementById('hudLives').textContent = state.lives;
+
+            const timerEl = document.getElementById('hudTimer');
+            const timerPill = document.getElementById('timerPill');
+            timerEl.textContent = timeLeft + 's';
+
+            if (timeLeft <= 10) timerPill.classList.add('timer-warning');
+            else timerPill.classList.remove('timer-warning');
+        }
+
+        function updateHomeUI() {
+            document.getElementById('usernameInp').value = state.username;
+            document.getElementById('avatarBtn').textContent = state.avatar;
+            if (state.isPremium && state.isGoldActive) bodyRoot.classList.add('gold-mode');
+            else bodyRoot.classList.remove('gold-mode');
+            if (state.isPremium) document.getElementById('premiumToggleArea').style.display = 'block';
+
+            // 1. BALL COLOR PICKER
+            const picker = document.getElementById('colorPicker'); picker.innerHTML = '';
+            [...COLORS, ...PREMIUM_COLORS].forEach(c => {
+                const isPremiumColor = PREMIUM_COLORS.includes(c);
+                const d = document.createElement('div');
+                d.className = `color-dot ${state.ballColor === c ? 'active' : ''}`;
+                d.style.background = c;
+                if (!isPremiumColor || state.isPremium) {
+                    d.onclick = () => { state.ballColor = c; saveState(); updateHomeUI(); };
+                } else {
+                    d.style.opacity = '0.3'; d.innerHTML = '<div style="font-size:6px; margin: 8px 6px;">🔒</div>';
+                    d.onclick = () => alert("Premium exclusive color!");
+                }
+                picker.appendChild(d);
+            });
+
+
+        }
+
+        function cycleAvatar() {
+            const idx = AVATARS.indexOf(state.avatar);
+            state.avatar = AVATARS[(idx + 1) % AVATARS.length];
+            document.getElementById('avatarBtn').textContent = state.avatar;
+            saveState();
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); loadState(); loop();
+
+    </script>
+</body>
+
+</html>
