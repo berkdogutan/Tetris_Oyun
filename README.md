@@ -186,25 +186,6 @@ Unity -quit -batchmode -buildTarget Android -executeMethod BuildScript.BuildAndr
 
 ---
 
-## 🐛 Known Issues
-
-*No known issues at this time.*
-
----
-
-## 📝 License
-
-All rights reserved. This project is proprietary and confidential.
-
----
-
-## 👥 Team
-
-- **Developer:** [Your Name]
-- **Designer:** [Your Name]
-- **Monetization:** [Your Name]
-
----
 
 ## 📞 Contact
 
