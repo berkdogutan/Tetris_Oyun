@@ -1081,6 +1081,9 @@
                 state.revives++;
                 state.lives = 1;
                 gameMode = 'PLAYING';
+                // Reset the round timer, otherwise a time-out game over repeats immediately
+                timeLeft = 20 + (state.level * 2);
+                timerLastTick = Date.now();
                 switchScreen('none');
                 document.getElementById('hud').style.display = 'flex';
                 resetBall();
@@ -1089,10 +1092,13 @@
             } else goHome();
         }
 
+        function escapeHtml(v) {
+            return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
         function showLeaderboard() {
             const lb = JSON.parse(localStorage.getItem('onemoremove_ultra_lb') || '[]');
             document.getElementById('lbList').innerHTML = lb.map((item, i) => `
-                <div class="lb-item"><span>#${i + 1} ${item.name}</span><span>${item.score}</span></div>
+                <div class="lb-item"><span>#${i + 1} ${escapeHtml(item.name)}</span><span>${Number(item.score) || 0}</span></div>
             `).join('');
             switchScreen('leaderboard');
         }
@@ -1181,4 +1187,4 @@
     </script>
 </body>
 
-</html>
+</html>
