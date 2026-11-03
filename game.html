@@ -705,9 +705,10 @@
         }
         function watchAd() { state.revivesUsed++; state.lives = 1; switchScreen('game'); loadLevel(); }
         function goHome() { switchScreen('home'); updateHomeUI(); }
+        function escapeHtml(v) { return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
         function showLeaderboard() {
             let h = JSON.parse(localStorage.getItem('lb') || '[]');
-            document.getElementById('lbList').innerHTML = h.map((x, i) => `<div class="lb-item"><span>#${i + 1} ${x.n}</span><span>${x.s}</span></div>`).join('');
+            document.getElementById('lbList').innerHTML = h.map((x, i) => `<div class="lb-item"><span>#${i + 1} ${escapeHtml(x.n)}</span><span>${Number(x.s) || 0}</span></div>`).join('');
             switchScreen('leaderboard');
         }
         // NO ADS LOGIC
@@ -749,4 +750,4 @@
     </script>
 </body>
 
-</html>
+</html>

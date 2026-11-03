@@ -87,6 +87,8 @@
         }
 
         #gameCanvas {
+            max-width: 100%;
+            height: auto;
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             background: rgba(0, 0, 0, 0.2);
@@ -330,26 +332,29 @@
         generateLevel(currentLevel);
         updateHUD();
 
+        // Map a pointer position (CSS pixels) to canvas pixels; the canvas is scaled down on narrow screens
+        function toCanvas(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                offsetX: (clientX - rect.left) * (canvas.width / rect.width),
+                offsetY: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
         // Canvas events
-        canvas.addEventListener('mousedown', onDragStart);
-        canvas.addEventListener('mousemove', onDragMove);
+        canvas.addEventListener('mousedown', (e) => onDragStart(toCanvas(e.clientX, e.clientY)));
+        canvas.addEventListener('mousemove', (e) => onDragMove(toCanvas(e.clientX, e.clientY)));
         canvas.addEventListener('mouseup', onDragEnd);
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            onDragStart({ offsetX: x, offsetY: y });
-        });
+            onDragStart(toCanvas(touch.clientX, touch.clientY));
+        }, { passive: false });
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            onDragMove({ offsetX: x, offsetY: y });
-        });
+            onDragMove(toCanvas(touch.clientX, touch.clientY));
+        }, { passive: false });
         canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             onDragEnd();
@@ -457,6 +462,12 @@
                     player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
                 }
 
+                // Ceiling: bounce instead of leaving the screen
+                if (player.y - player.radius < 0) {
+                    player.vy *= -damping;
+                    player.y = player.radius;
+                }
+
                 // Obstacle collisions
                 obstacles.forEach(obs => {
                     if (player.x + player.radius > obs.x &&
@@ -541,6 +552,9 @@
         }
 
         function levelComplete() {
+            // Freeze physics during the transition; otherwise the still-flying ball
+            // can fall off the bottom and cost a life for a level that was already won
+            gameState = 'TRANSITION';
             currentLevel++;
 
             if (currentLevel > 100) {
@@ -751,8 +765,13 @@
         }
 
         function gameLoop() {
-            update();
-            draw();
+            try {
+                update();
+                draw();
+            } catch (err) {
+                // Never let one bad frame stop the loop; the game would otherwise freeze mid-flight
+                console.error('frame error', err);
+            }
             requestAnimationFrame(gameLoop);
         }
 
@@ -761,4 +780,4 @@
     </script>
 </body>
 
-</html>
+</html>
