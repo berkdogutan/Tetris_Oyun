@@ -214,19 +214,6 @@ Unity or Flutter project exists in the repository.
 
 ---
 
-## 📝 License
-
-All rights reserved. This project is proprietary and confidential.
-
----
-
-## 👥 Team
-
-- **Developer:** [Your Name]
-- **Designer:** [Your Name]
-- **Monetization:** [Your Name]
-
----
 
 ## 📞 Contact
 
