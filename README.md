@@ -32,8 +32,7 @@ The playable work so far lives in three standalone HTML files. Open any of them 
 | `prototype.html` | First prototype: 100 levels, larger zones, basic HUD |
 
 ### Mobile build (not available yet)
-The mobile target is **undecided**. The docs describe a Unity 2D project, `oyun.rar` holds three Unity C# scripts
-(`GameManager`, `PlayerController`, `ScoreManager`), while `codemagic.yaml` builds a Flutter APK and
+The mobile target is **undecided**. The docs describe a Unity 2D project, while `codemagic.yaml` builds a Flutter APK and
 `IMPLEMENTATION_FLUTTER.md` describes a Flutter/Flame rebuild. Neither a Unity nor a Flutter project is in this repository,
 so there is nothing to build on a device yet.
 
@@ -46,7 +45,6 @@ game.html                 # NEON ZERO browser prototype (main)
 one_more_move_test.html   # timer / star-rating prototype
 prototype.html            # first prototype
 qa/test.js                # Playwright checks for the three prototypes
-oyun.rar                  # archive: Unity C# scripts + copies of the docs
 codemagic.yaml            # Flutter CI workflow (no Flutter project yet)
 GDD.md, ROADMAP.md, IMPLEMENTATION_PLAN.md, IMPLEMENTATION_FLUTTER.md,
 QUICK_START.md, START_HERE.md   # design and planning docs
